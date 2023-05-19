@@ -1,0 +1,84 @@
+I want to add tab-completion for bash and zsh to my Rust cli utility that uses 'clap::App'
+
+ChatGPT
+Adding tab-completion to your Rust command-line utility can greatly enhance its user-friendliness. The Rust library clap supports generating completion scripts for various shells including bash and zsh.
+
+Here is a simple example of how to generate these scripts.
+
+First, define your command-line arguments and options using clap::App and clap::Arg. You'll need to match on your arguments and execute the appropriate logic for each case.
+
+Here is a simple example:
+
+rust
+Copy code
+use clap::{App, Arg, SubCommand};
+
+fn main() {
+    let matches = App::new("MyApp")
+        .version("1.0")
+        .author("Author Name <author@example.com>")
+        .about("Does awesome things")
+        .arg(Arg::with_name("config")
+             .short("c")
+             .long("config")
+             .value_name("FILE")
+             .help("Sets a custom config file")
+             .takes_value(true))
+        .subcommand(SubCommand::with_name("test")
+                    .about("controls testing features")
+                    .version("1.0")
+                    .author("Author Name <author@example.com>")
+                    .arg(Arg::with_name("debug")
+                         .short("d")
+                         .help("print debug information")))
+        .get_matches();
+
+    // You can check the value provided by --config or if "test" subcommand was used, etc here.
+    // In a real application, you'd have more logic here...
+}
+To generate the completion scripts, you will want to add a special command or flag that users can run to generate the completion scripts for their shell. They can then source this file in their shell profile.
+
+Here is a simple example of how to do this:
+
+rust
+Copy code
+if let Some(matches) = matches.subcommand_matches("completions") {
+    let shell = matches.value_of("SHELL").unwrap();
+    match shell {
+        "bash" => {
+            App::new("myapp").gen_completions_to(
+                "myapp",
+                clap::Shell::Bash,
+                &mut std::io::stdout(),
+            );
+        }
+        "zsh" => {
+            App::new("myapp").gen_completions_to(
+                "myapp",
+                clap::Shell::Zsh,
+                &mut std::io::stdout(),
+            );
+        }
+        // ... other shells ...
+        _ => eprintln!("Unknown shell"),
+    }
+}
+You'll want to add the completions subcommand to your clap::App definition:
+
+rust
+Copy code
+App::new("myapp")
+    .subcommand(
+        SubCommand::with_name("completions")
+            .about("Generates completion scripts for your shell")
+            .arg(
+                Arg::with_name("SHELL")
+                    .required(true)
+                    .possible_values(&["bash", "fish", "zsh", "powershell", "elvish"])
+                    .help("The shell to generate the script for"),
+            ),
+    )
+    // ... rest of your argument definitions ...
+Then users can generate the completion script for their shell by running something like myapp completions bash or myapp completions zsh, and sourcing the output in their shell profile.
+
+Do note that you would typically generate the completions to a file that the user can then source in their shell's rc file. The above examples generate completions to stdout for simplicity. You can adjust this to meet your needs.
