@@ -56,6 +56,10 @@ impl<'a> Printer1<'a> {
         Printer1 { output }
     }
 
+    pub fn new_by_ref(output: &'a mut dyn Write) -> Printer1 {
+        Printer1 { output: Some(output) }
+    }
+
     pub fn default() -> Printer1<'a> {
         Printer1 { output: None }
     }
@@ -124,6 +128,7 @@ impl<'a> Printer1<'a> {
 //}
 //  }}}
 
+#[allow(non_snake_case)]
 fn pass_Write_by_val() 
 {
     //  Attempting to pass buffer by value
@@ -136,7 +141,7 @@ fn pass_Write_by_val()
 
 }
 
-
+#[allow(non_snake_case)]
 fn pass_Write_by_mut_ref()
 {
     //  Write to buffer
@@ -163,6 +168,21 @@ fn pass_Write_by_mut_ref()
     drop(p3);   //  unnecessary
     f.flush().expect("Failed to flush BufWriter");
     drop(f);    //  unnecessary
+
+
+    let mut b4 = Vec::<u8>::new();
+    let mut p4 = Printer1::new_by_ref(&mut b4);
+    p4.write("Line Five");
+    let s4 = String::from_utf8_lossy(&b4);
+    print!("{}", s4);
+    println!("{:?}", b4);
+
+
+    let mut b5 = Vec::<u8>::new();
+    let mut p5 = Printer1::new(Some(&mut b5));
+    p5.write("Line Six");
+    let s5 = String::from_utf8(b5).unwrap();
+    print!("{}", s5);
 
 
     //  Append to file
