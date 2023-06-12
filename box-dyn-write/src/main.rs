@@ -128,6 +128,36 @@ impl<'a> Printer1<'a> {
 //}
 //  }}}
 
+
+#[allow(non_snake_case)]
+fn pass_optioned_box_as_ref() 
+{
+    struct Printer<'a> { writer: Option<&'a mut dyn Write>, }
+    fn get_writer() -> Option<Box<dyn Write>> { None }
+
+    //  gpt4 suggestion (invalid)
+    //let mut writer = get_writer();
+    //{
+    //    let mut printer = Printer {
+    //        writer: writer.as_deref_mut(),
+    //    };
+    //    // do stuff with printer here
+    //}
+    //// writer goes out of scope here
+
+    //  invalid
+    //let mut writer = get_writer();
+    //let mut printer = Printer { writer: writer.as_deref_mut(), };
+
+    //  valid
+    let mut writer = get_writer();
+    let mut printer = match writer.as_deref_mut() {
+        Some(w) => Printer { writer: Some(w) },
+        None => Printer { writer: None },
+    };
+
+}
+
 #[allow(non_snake_case)]
 fn pass_Write_by_val() 
 {
@@ -195,6 +225,7 @@ fn pass_Write_by_mut_ref()
 
 fn main() 
 {
+    pass_optioned_box_as_ref();
     pass_Write_by_val();
     pass_Write_by_mut_ref();
 }
